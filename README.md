@@ -6,6 +6,7 @@ A small, dark-themed macOS reader for Markdown files, with:
 - **Mermaid**: every diagram type; click a diagram to view it full-window, Esc to close
 - **GFM tables**, task lists, footnotes, syntax-highlighted code with a Copy button
 - **Outline sidebar** that tracks your position (⌃⌘S to show/hide)
+- **Distraction-free**: the title bar fades out after 3 s; move the mouse to the top edge to bring it back
 - **Live reload**: the page updates when the file changes on disk and keeps your scroll position
 - Relative images and links work; links to other `.md` files open in MD Reader
 
@@ -16,7 +17,6 @@ Everything is bundled, so it works offline.
 | Key | Action |
 | --- | --- |
 | ⌘O | Open |
-| ⌘F / ⌘G / ⇧⌘G | Find / next / previous |
 | ⌘= / ⌘- / ⌘0 | Zoom in / out / reset (remembered) |
 | ⌃⌘S | Outline sidebar |
 | ⌘R | Reload |
@@ -42,7 +42,7 @@ Finder → select any .md → Get Info → Open with: MD Reader → Change All�
 
 - `Sources/MDReader/`: AppKit app (no SwiftUI). `MarkdownDocument` is a read-only
   NSDocument that polls the file for changes, `ViewerWindowController` owns the
-  WKWebView, toolbar, find and zoom, and `SchemeHandler` serves `mdr://app/…` (the
+  WKWebView, toolbar and zoom, `ChromeAutoHider` fades the title bar, and `SchemeHandler` serves `mdr://app/…` (the
   viewer) and `mdr://file/…` (local images) to the web view.
 - `Web/`: `viewer.html/css/js` does the rendering with markdown-it + KaTeX +
   Mermaid + highlight.js. `Web/vendor/` holds pinned copies of those libraries;

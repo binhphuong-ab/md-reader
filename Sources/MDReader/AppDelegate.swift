@@ -65,10 +65,6 @@ enum MainMenu {
         main.addItem(submenu("Edit", [
             item("Copy", #selector(NSText.copy(_:)), "c"),
             item("Select All", #selector(NSText.selectAll(_:)), "a"),
-            .separator(),
-            item("Find…", #selector(ViewerWindowController.showFind(_:)), "f"),
-            item("Find Next", #selector(ViewerWindowController.findNext(_:)), "g"),
-            item("Find Previous", #selector(ViewerWindowController.findPrevious(_:)), "g", [.command, .shift]),
         ]))
 
         main.addItem(submenu("View", [

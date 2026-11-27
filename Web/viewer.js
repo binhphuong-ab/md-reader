@@ -1,5 +1,5 @@
 // MD Reader — renders Markdown (+ KaTeX math, Mermaid, GFM tables) into #content.
-// Swift calls MDR.render(text, dir, keepScroll) and MDR.setOutline(bool);
+// Swift calls MDR.render(text, dir, keepScroll), MDR.setOutline(on, animate), MDR.setTopInset(px);
 // this page talks back through window.webkit.messageHandlers.mdr.
 (() => {
   'use strict';
@@ -293,6 +293,20 @@
     post({ type: 'open', href: resolveLocal(href) || href });
   });
 
-  window.MDR = { render, setOutline };
+  // The vertical scrollbar takes width on the right only, which would push the centred
+  // column left. Mirror its width on the left (0 with macOS overlay scrollbars).
+  function updateScrollbarOffset() {
+    const sbw = Math.max(0, window.innerWidth - document.documentElement.clientWidth);
+    document.documentElement.style.setProperty('--sbw', `${sbw}px`);
+  }
+  window.addEventListener('resize', updateScrollbarOffset);
+  new ResizeObserver(updateScrollbarOffset).observe(document.body);
+
+  // Room for the native title bar, which overlays the page and auto-hides.
+  function setTopInset(px) {
+    document.documentElement.style.setProperty('--top-inset', `${px}px`);
+  }
+
+  window.MDR = { render, setOutline, setTopInset };
   post({ type: 'ready' });
 })();

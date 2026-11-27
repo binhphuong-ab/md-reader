@@ -3,9 +3,9 @@ import WebKit
 
 /// One window = one WKWebView showing Web/viewer.html, fed the document's text.
 final class ViewerWindowController: NSWindowController, NSWindowDelegate, WKNavigationDelegate,
-                                    NSToolbarDelegate, NSSearchFieldDelegate {
+                                    NSToolbarDelegate {
     private var webView: WKWebView!
-    private var searchField: NSSearchField?
+    private let chrome = ChromeAutoHider()
     private var pageReady = false
 
     private static let background = NSColor(srgbRed: 0x15 / 255.0, green: 0x17 / 255.0, blue: 0x1c / 255.0, alpha: 1)
@@ -25,8 +25,9 @@ final class ViewerWindowController: NSWindowController, NSWindowDelegate, WKNavi
         super.init(window: window)
         window.delegate = self
         shouldCascadeWindows = true
-        setUpWebView()
         setUpToolbar()
+        chrome.attach(to: window)   // before the web view, so it is created full-window
+        setUpWebView()
         if !window.setFrameUsingName("MDReaderWindow") { window.center() }
         window.setFrameAutosaveName("MDReaderWindow")
         NotificationCenter.default.addObserver(self, selector: #selector(applyZoom),
@@ -79,6 +80,7 @@ final class ViewerWindowController: NSWindowController, NSWindowDelegate, WKNavi
         case "ready":
             pageReady = true
             setOutline(UserDefaults.standard.object(forKey: Self.outlineKey) as? Bool ?? true)
+            webView.evaluateJavaScript("MDR.setTopInset(\(Int(chrome.barHeight.rounded())))")
             render(keepScroll: false)
             window?.makeFirstResponder(webView)
         case "open":
@@ -193,46 +195,9 @@ final class ViewerWindowController: NSWindowController, NSWindowDelegate, WKNavi
         webView.pageZoom = CGFloat(UserDefaults.standard.object(forKey: Self.zoomKey) as? Double ?? 1.0)
     }
 
-    // MARK: - find
-
-    @objc func showFind(_ sender: Any?) {
-        guard let field = searchField else { return }
-        window?.makeFirstResponder(field)
-        field.selectText(nil)
-    }
-    @objc func findNext(_ sender: Any?) { find(backwards: false) }
-    @objc func findPrevious(_ sender: Any?) { find(backwards: true) }
-
-    private func find(backwards: Bool) {
-        guard let text = searchField?.stringValue, !text.isEmpty else { return showFind(nil) }
-        let config = WKFindConfiguration()
-        config.backwards = backwards
-        config.caseSensitive = false
-        config.wraps = true
-        webView.find(text, configuration: config) { [weak self] result in
-            if !result.matchFound { NSSound.beep() }
-            _ = self
-        }
-    }
-
-    @objc private func searchSubmitted(_ sender: NSSearchField) {
-        let back = NSApp.currentEvent?.modifierFlags.contains(.shift) ?? false
-        find(backwards: back)
-    }
-
-    func control(_ control: NSControl, textView: NSTextView, doCommandBy selector: Selector) -> Bool {
-        if selector == #selector(NSResponder.cancelOperation(_:)) {
-            searchField?.stringValue = ""
-            window?.makeFirstResponder(webView)
-            return true
-        }
-        return false
-    }
-
     // MARK: - toolbar
 
     private static let outlineItem = NSToolbarItem.Identifier("outline")
-    private static let searchItem = NSToolbarItem.Identifier("search")
 
     private func setUpToolbar() {
         let toolbar = NSToolbar(identifier: "MDReaderToolbar")
@@ -243,7 +208,7 @@ final class ViewerWindowController: NSWindowController, NSWindowDelegate, WKNavi
     }
 
     func toolbarDefaultItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
-        [Self.outlineItem, .flexibleSpace, Self.searchItem]
+        [Self.outlineItem]
     }
     func toolbarAllowedItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
         toolbarDefaultItemIdentifiers(toolbar)
@@ -260,15 +225,6 @@ final class ViewerWindowController: NSWindowController, NSWindowDelegate, WKNavi
             item.isBordered = true
             item.target = self
             item.action = #selector(toggleOutline(_:))
-            return item
-        case Self.searchItem:
-            let item = NSSearchToolbarItem(itemIdentifier: id)
-            item.searchField.placeholderString = "Find in document"
-            item.searchField.sendsWholeSearchString = true
-            item.searchField.target = self
-            item.searchField.action = #selector(searchSubmitted(_:))
-            item.searchField.delegate = self
-            searchField = item.searchField
             return item
         default:
             return nil
