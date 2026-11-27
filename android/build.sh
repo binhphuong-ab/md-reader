@@ -3,7 +3,7 @@
 #   android/build.sh            build build/MDReader.apk and install it on the connected phone
 #   android/build.sh --no-install
 # Needs: Android SDK (build-tools 35, platform android-35), JDK 17, adb. The web viewer is
-# the same ../Web folder the Mac app uses.
+# android/web: the Android copy, split from the Mac app's ../Web so the two evolve separately.
 set -euo pipefail
 cd "$(dirname "$0")"
 
@@ -19,7 +19,7 @@ rm -rf "$OUT" && mkdir -p "$OUT"/{res-gen,compiled,classes,dex,gen,assets}
 
 echo "==> icon + assets"
 swift ../tools/make-android-icon.swift "$OUT/res-gen" 2>&1 | grep -v "search path" || true
-cp -R ../Web "$OUT/assets/web"
+cp -R web "$OUT/assets/web"
 
 echo "==> resources"
 "$BT/aapt2" compile --dir res -o "$OUT/compiled/res.zip"
