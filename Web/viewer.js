@@ -289,13 +289,14 @@
   function setUpPullToReveal() {
     const fab = $('#fab'), body = document.body;
     const OPEN = 52;                     // px the page sits lower while the buttons show
-    const MAX = 120;                     // rubber band never goes beyond this
-    const ARM_DY = 195;                  // finger travel (CSS px) needed before release opens it
+    const MAX = 450;                     // rubber band never goes beyond this
+    const SOFT = 600;                    // larger = less resistance (page follows ~0.75× the finger at first)
+    const ARM_DY = 400;                  // finger travel (CSS px) needed before release opens it
     fab.hidden = false;
     let startY = null, pulling = false, ticked = false, open = false, d = 0, dyNow = 0, frame = 0, compensating = false;
 
-    const rubber = (dy) => MAX * (1 - Math.exp(-dy / (MAX * 1.6)));
-    const D_ARM = rubber(ARM_DY);        // how far the page has slid at the arming point
+    const rubber = (dy) => MAX * (1 - Math.exp(-dy / SOFT));
+    const D_ARM = rubber(ARM_DY);        // how far the page has slid at the arming point (≈ 220 px)
     // px = page offset; p = button reveal 0…1 (fills over the whole pull, full only once armed)
     const apply = (px, mode, p = Math.min(px / D_ARM, 1)) => {
       body.classList.toggle('settle-open', mode === 'open');
