@@ -31,7 +31,7 @@ import java.nio.charset.StandardCharsets;
 /**
  * MD Reader for Android: one full-screen WebView running the same viewer as the Mac app
  * (assets/web/viewer.html). Files arrive through "Open with", "Share", or the in-page Open
- * button ("File gần đây" picker if installed, else the system picker); the last picked file
+ * button ("Recent Files" picker if installed, else the system picker); the last picked file
  * reopens on the next launch.
  */
 public class MainActivity extends Activity {
@@ -183,7 +183,7 @@ public class MainActivity extends Activity {
     }
 
     private void pickFile() {
-        // Prefer our own "File gần đây" picker (newest-first, .md preselected); the system picker
+        // Prefer our own "Recent Files" picker (newest-first, .md preselected); the system picker
         // is only the fallback when that app isn't installed. ACTION_OPEN_DOCUMENT always lands in
         // the system picker, so the direct route has to be an explicit GET_CONTENT.
         Intent recent = new Intent(Intent.ACTION_GET_CONTENT)
