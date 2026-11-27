@@ -16,26 +16,8 @@ Everything is bundled, so it works offline.
 
 ![A Mermaid flowchart in the dark-green diagram theme](Examples/screenshot-diagram.png)
 
-## Android
-
-The viewer also runs as an Android app (`android/`): one WebView with the bundled
-`android/web/` folder, which started as a copy of the Mac app's `Web/`, so math, diagrams,
-tables and the dark-green theme match. The two copies are separate: a change to one does
-not touch the other.
-
-- Open a `.md` from your file manager (Open with → MD Reader), share a file or text to it,
-  or tap the folder button to pick a file; the last picked file reopens next time.
-- The ☰ and folder buttons stay hidden while reading: at the top of the page, a long pull
-  slides the page down to reveal them (with a haptic tick). ☰ shows the outline as a drawer; Back closes
-  it (or a zoomed diagram) before leaving.
-- On Xiaomi/HyperOS it uses the phone's MiSans font with tuned weights.
-
-```bash
-android/build.sh              # builds android/build/MDReader.apk and installs it via adb
-android/build.sh --no-install
-```
-
-Needs the Android SDK (build-tools 35, platform 35), JDK 17 and adb; no Gradle.
+There is also an Android version, in its own repo:
+[md-reader-android](https://github.com/binhphuong-ab/md-reader-android).
 
 ## Shortcuts
 
@@ -72,10 +54,6 @@ Finder → select any .md → Get Info → Open with: MD Reader → Change All�
 - `Web/`: `viewer.html/css/js` does the rendering with markdown-it + KaTeX +
   Mermaid + highlight.js. `Web/vendor/` holds pinned copies of those libraries;
   run `tools/vendor.sh` to upgrade them.
-- `android/`: `MainActivity.java` (WebView host, file intents, picker), manifest, and a
-  Gradle-free `build.sh`; `tools/make-android-icon.swift` draws the adaptive icon.
-  `android/web/` is the Android copy of the viewer (its own `vendor/` too), edited
-  independently of `Web/`.
 - `Examples/feature-test.md`: one file that exercises every feature.
 
 ## License
