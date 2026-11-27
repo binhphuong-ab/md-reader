@@ -16,8 +16,8 @@
   --side: 36px;       /* left/right margin around the text */
   --top-inset: 0px;   /* height of the auto-hiding title bar, set from Swift */
   --sbw: 0px;         /* scrollbar width, set from JS: added on the left so the column is centred in the window */
-  --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
-  --mono: "SF Mono", ui-monospace, Menlo, monospace;
+  --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", system-ui, Roboto, sans-serif;
+  --mono: "SF Mono", ui-monospace, Menlo, "Roboto Mono", monospace;
 }
 
 * { box-sizing: border-box; }
@@ -203,6 +203,59 @@ details.frontmatter pre { margin: 8px 0 2px; font: 12.5px/1.55 var(--mono); colo
 ::-webkit-scrollbar-thumb:hover { background: #3b404b; }
 
 /* ---------- print: light, ink-friendly ---------- */
+/* ---------- narrow screens (phones, small windows): outline becomes a drawer ---------- */
+#backdrop { display: none; }
+@media (max-width: 760px) {
+  :root { --side: 16px; }
+  body { font-size: 16px; line-height: 1.68; }
+  h1 { font-size: 1.75em; }
+  h2 { font-size: 1.38em; }
+  h3 { font-size: 1.15em; }
+  body.outline-open #page { padding-left: calc(var(--side) + var(--sbw)); }   /* don't push the text */
+  #outline {
+    z-index: 6; width: min(82vw, 320px);
+    box-shadow: 8px 0 32px rgba(0, 0, 0, .45);
+    font-size: 14.5px;
+  }
+  #toc a { padding: 7px 10px; }
+  #stats { width: min(82vw, 320px); }
+  body.outline-open #backdrop {
+    display: block; position: fixed; inset: 0; z-index: 5; background: rgba(5, 6, 8, .5);
+  }
+  .table-wrap { font-size: .9em; }
+  .mermaid-block { padding: 12px; }
+}
+
+/* ---------- Android floating buttons ---------- */
+#fab {
+  position: fixed; z-index: 7; top: calc(var(--top-inset) + 8px); right: 10px;
+  display: flex; gap: 8px;
+}
+#fab[hidden] { display: none; }
+#fab button {
+  width: 40px; height: 40px; border-radius: 20px; padding: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(30, 33, 40, .82); border: 1px solid var(--border);
+  -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+}
+#fab svg { width: 20px; height: 20px; fill: none; stroke: #c9cfd8; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+#fab button:active { background: var(--accent-soft); }
+#fab button:active svg { stroke: var(--accent); }
+#fab { transition: opacity .2s ease, transform .2s ease; }
+#fab.away { opacity: 0; transform: translateY(-12px); pointer-events: none; }   /* hidden while scrolling down */
+body.android #page { padding-top: calc(var(--top-inset) + 60px); }   /* clear of the buttons */
+/* Edge-to-edge Android: a strip behind the status bar so text doesn't scroll under the clock. */
+body.android::before {
+  content: ""; position: fixed; z-index: 8; top: 0; left: 0; right: 0; height: var(--top-inset);
+  background: var(--bg);
+}
+/* Android: Roboto for text (preferred over MiSans), and Noto Serif Bold for headings, like
+   Telegram's Instant View. Android ships a real bold Noto Serif, so headings stay crisp,
+   while Roboto on HyperOS has no bold file and its synthesized bold looks thin at large sizes. */
+body.android h1, body.android h2, body.android h3, body.android h4, body.android h5, body.android h6 {
+  font-family: "Noto Serif", serif; font-weight: 700; letter-spacing: 0;
+}
+
 @media print {
   html, body { background: #fff; color: #1f2328; font-size: 11.5pt; }
   #outline, #stats, .copy-btn { display: none !important; }

@@ -4,7 +4,13 @@
 (() => {
   'use strict';
 
-  const post = (msg) => window.webkit?.messageHandlers?.mdr?.postMessage(msg);
+  // macOS: WKScriptMessageHandler. Android: a @JavascriptInterface named MDRAndroid.
+  const post = (msg) => {
+    if (window.webkit?.messageHandlers?.mdr) window.webkit.messageHandlers.mdr.postMessage(msg);
+    else window.MDRAndroid?.post(JSON.stringify(msg));
+  };
+  const isAndroid = !!window.MDRAndroid;
+  const narrow = () => window.matchMedia('(max-width: 760px)').matches;
   const $ = (sel) => document.querySelector(sel);
   const ESC = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
   const escapeHtml = (s) => String(s).replace(/[&<>"']/g, (c) => ESC[c]);
@@ -72,7 +78,7 @@
     startOnLoad: false,
     theme: 'base',
     darkMode: true,
-    fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif',
+    fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", system-ui, Roboto, sans-serif',
     themeVariables: {
       darkMode: true,
       background: '#1b1e24',
@@ -267,6 +273,31 @@
     overlay.hidden = false;
   }
   overlay.addEventListener('click', () => { overlay.hidden = true; });
+  // On narrow screens the outline is a drawer over the text; tapping outside closes it.
+  $('#backdrop').addEventListener('click', () => setOutline(false, true));
+
+  if (isAndroid) {
+    document.body.classList.add('android');
+    $('#fab').hidden = false;
+    $('#fab-outline').addEventListener('click', () =>
+      setOutline(!document.body.classList.contains('outline-open'), true));
+    $('#fab-open').addEventListener('click', () => post({ type: 'pick' }));
+    // Get the buttons out of the way while reading (scrolling down); bring them back on scroll up.
+    let lastY = window.scrollY;
+    window.addEventListener('scroll', () => {
+      const y = window.scrollY, fab = $('#fab');
+      if (y > lastY + 4 && y > 80) fab.classList.add('away');
+      else if (y < lastY - 4 || y <= 80) fab.classList.remove('away');
+      lastY = y;
+    }, { passive: true });
+  }
+
+  // Android back button: close the zoomed diagram, then the drawer; false = leave the app.
+  function back() {
+    if (!overlay.hidden) { overlay.hidden = true; return true; }
+    if (narrow() && document.body.classList.contains('outline-open')) { setOutline(false, true); return true; }
+    return false;
+  }
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') overlay.hidden = true; });
 
   document.addEventListener('click', (e) => {
@@ -286,6 +317,7 @@
     const href = a.getAttribute('href');
     e.preventDefault();
     if (href.startsWith('#')) {
+      if (narrow() && a.closest('#toc')) setOutline(false, true);
       const target = document.getElementById(decodeURIComponent(href.slice(1)));
       target?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       return;
@@ -307,6 +339,6 @@
     document.documentElement.style.setProperty('--top-inset', `${px}px`);
   }
 
-  window.MDR = { render, setOutline, setTopInset };
+  window.MDR = { render, setOutline, setTopInset, back };
   post({ type: 'ready' });
 })();

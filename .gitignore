@@ -2,3 +2,4 @@
 build/
 *.app
 tools/vendor-src/
+android/build/
