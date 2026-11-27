@@ -278,18 +278,82 @@
 
   if (isAndroid) {
     document.body.classList.add('android');
-    $('#fab').hidden = false;
-    $('#fab-outline').addEventListener('click', () =>
-      setOutline(!document.body.classList.contains('outline-open'), true));
-    $('#fab-open').addEventListener('click', () => post({ type: 'pick' }));
-    // Get the buttons out of the way while reading (scrolling down); bring them back on scroll up.
-    let lastY = window.scrollY;
-    window.addEventListener('scroll', () => {
-      const y = window.scrollY, fab = $('#fab');
-      if (y > lastY + 4 && y > 80) fab.classList.add('away');
-      else if (y < lastY - 4 || y <= 80) fab.classList.remove('away');
-      lastY = y;
+    setUpPullToReveal();
+  }
+
+  // The Outline/Open buttons are hidden while reading. At the very top of the page, a long
+  // pull slides the whole page down (with rubber-band resistance) and reveals them above it;
+  // crossing the threshold gives one haptic tick. Released past it, the page settles open
+  // with a slight spring; released early, it springs back. Scrolling down, or tapping one of
+  // the buttons, closes it again. All motion comes from --pull / --p (see viewer.css).
+  function setUpPullToReveal() {
+    const fab = $('#fab'), body = document.body;
+    const OPEN = 52;                     // px the page sits lower while the buttons show
+    const MAX = 120;                     // rubber band never goes beyond this
+    const ARM_DY = 195;                  // finger travel (CSS px) needed before release opens it
+    fab.hidden = false;
+    let startY = null, pulling = false, ticked = false, open = false, d = 0, dyNow = 0, frame = 0, compensating = false;
+
+    const rubber = (dy) => MAX * (1 - Math.exp(-dy / (MAX * 1.6)));
+    const D_ARM = rubber(ARM_DY);        // how far the page has slid at the arming point
+    // px = page offset; p = button reveal 0…1 (fills over the whole pull, full only once armed)
+    const apply = (px, mode, p = Math.min(px / D_ARM, 1)) => {
+      body.classList.toggle('settle-open', mode === 'open');
+      body.classList.toggle('settle-close', mode === 'close');
+      body.style.setProperty('--pull', `${px}px`);
+      body.style.setProperty('--p', String(p));
+    };
+    const setOpen = (v) => { open = v; body.classList.toggle('fab-open', v); };
+    const close = () => { if (open) { setOpen(false); apply(0, 'close', 0); } };
+
+    document.addEventListener('touchstart', (e) => {
+      const ok = !open && window.scrollY <= 0 && e.touches.length === 1 &&
+        !body.classList.contains('outline-open') && overlay.hidden;
+      startY = ok ? e.touches[0].clientY : null;
+      pulling = false; ticked = false; d = 0; dyNow = 0;
     }, { passive: true });
+
+    document.addEventListener('touchmove', (e) => {
+      if (startY === null) return;
+      const dy = e.touches[0].clientY - startY;
+      if (dy <= 0 && !pulling) return;
+      pulling = true;
+      body.classList.add('pulling');
+      dyNow = Math.max(0, dy);
+      d = rubber(dyNow);
+      if (!ticked && dyNow >= ARM_DY) { ticked = true; post({ type: 'haptic' }); }
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => apply(d));     // one style write per frame
+    }, { passive: true });
+
+    const end = () => {
+      if (startY === null) return;
+      startY = null;
+      if (!pulling) return;
+      pulling = false;
+      body.classList.remove('pulling');
+      cancelAnimationFrame(frame);
+      if (dyNow >= ARM_DY) { setOpen(true); apply(OPEN, 'open', 1); } else apply(0, 'close', 0);
+    };
+    document.addEventListener('touchend', end, { passive: true });
+    document.addEventListener('touchcancel', end, { passive: true });
+
+    // Scrolling down while open: drop the offset and scroll back by the same amount in the
+    // same frame, so the text doesn't move on screen.
+    window.addEventListener('scroll', () => {
+      if (!open || compensating || window.scrollY <= OPEN + 8) return;
+      compensating = true;
+      setOpen(false);
+      apply(0, undefined, 0);
+      window.scrollBy(0, -OPEN);
+      requestAnimationFrame(() => { compensating = false; });
+    }, { passive: true });
+
+    $('#fab-outline').addEventListener('click', () => {
+      close();
+      setOutline(!body.classList.contains('outline-open'), true);
+    });
+    $('#fab-open').addEventListener('click', () => { close(); post({ type: 'pick' }); });
   }
 
   // Android back button: close the zoomed diagram, then the drawer; false = leave the app.

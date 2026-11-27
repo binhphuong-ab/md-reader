@@ -23,7 +23,9 @@ The same viewer also runs as an Android app (`android/`): one WebView with the b
 
 - Open a `.md` from your file manager (Open with → MD Reader), share a file or text to it,
   or tap the folder button to pick a file; the last picked file reopens next time.
-- ☰ shows the outline as a drawer; Back closes it (or a zoomed diagram) before leaving.
+- The ☰ and folder buttons stay hidden while reading: at the top of the page, a long pull
+  slides the page down to reveal them (with a haptic tick). ☰ shows the outline as a drawer; Back closes
+  it (or a zoomed diagram) before leaving.
 - On Xiaomi/HyperOS it uses the phone's MiSans font with tuned weights.
 
 ```bash

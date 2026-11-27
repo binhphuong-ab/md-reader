@@ -11,6 +11,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.OpenableColumns;
+import android.view.HapticFeedbackConstants;
 import android.view.View;
 import android.view.WindowInsets;
 import android.view.WindowInsetsController;
@@ -36,9 +37,10 @@ public class MainActivity extends Activity {
     private static final int PICK_FILE = 1;
     private static final String VIEWER = "file:///android_asset/web/viewer.html";
     private static final String WELCOME =
-            "# MD Reader\n\nTap **Open** (top right) to choose a Markdown file, or open a `.md` file "
-            + "from your file manager and pick **MD Reader**.\n\nSupports $\\LaTeX$ math, Mermaid "
-            + "diagrams, tables, task lists and footnotes.\n";
+            "# MD Reader\n\n**Pull down** at the top of the page to show the buttons, then tap the "
+            + "folder to choose a Markdown file. Or open a `.md` file from your file manager and pick "
+            + "**MD Reader**.\n\nSupports $\\LaTeX$ math, Mermaid diagrams, tables, task lists and "
+            + "footnotes.\n";
 
     private WebView web;
     private boolean pageReady;
@@ -55,6 +57,7 @@ public class MainActivity extends Activity {
 
         web = new WebView(this);
         web.setBackgroundColor(0xFF15171C);
+        web.setOverScrollMode(View.OVER_SCROLL_NEVER);   // the pull-to-reveal buttons are the feedback
         WebSettings s = web.getSettings();
         s.setJavaScriptEnabled(true);
         s.setAllowFileAccess(true);
@@ -222,6 +225,10 @@ public class MainActivity extends Activity {
                             break;
                         case "pick":
                             pickFile();
+                            break;
+                        case "haptic":
+                            web.performHapticFeedback(Build.VERSION.SDK_INT >= 30
+                                    ? HapticFeedbackConstants.CONFIRM : HapticFeedbackConstants.VIRTUAL_KEY);
                             break;
                         case "copy":
                             ClipboardManager cm = getSystemService(ClipboardManager.class);

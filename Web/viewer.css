@@ -241,9 +241,23 @@ details.frontmatter pre { margin: 8px 0 2px; font: 12.5px/1.55 var(--mono); colo
 #fab svg { width: 20px; height: 20px; fill: none; stroke: #c9cfd8; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 #fab button:active { background: var(--accent-soft); }
 #fab button:active svg { stroke: var(--accent); }
-#fab { transition: opacity .2s ease, transform .2s ease; }
-#fab.away { opacity: 0; transform: translateY(-12px); pointer-events: none; }   /* hidden while scrolling down */
-body.android #page { padding-top: calc(var(--top-inset) + 60px); }   /* clear of the buttons */
+/* Pull-to-reveal (setUpPullToReveal in viewer.js). Two animatable values drive everything:
+   --pull = how far the page has slid down (px), --p = how revealed the buttons are (0…1).
+   While the finger moves, JS sets them directly; on release .settle-open / .settle-close
+   transition them from wherever they are, so nothing ever jumps. */
+@property --pull { syntax: "<length>"; inherits: true; initial-value: 0px; }
+@property --p { syntax: "<number>"; inherits: true; initial-value: 0; }
+body.android.settle-open  { transition: --pull .5s cubic-bezier(.2, 1.25, .4, 1), --p .5s cubic-bezier(.2, 1.25, .4, 1); }
+body.android.settle-close { transition: --pull .3s cubic-bezier(.3, .7, .4, 1), --p .22s ease-out; }
+body.android #page { padding-top: calc(var(--top-inset) + 16px); transform: translateY(var(--pull)); }
+body.android.pulling #page { will-change: transform; }
+#fab {
+  opacity: var(--p);
+  transform: translateY(calc((1 - var(--p)) * -18px)) scale(calc(.88 + .12 * var(--p)));
+  pointer-events: none;
+}
+body.fab-open #fab { pointer-events: auto; }
+html:has(body.android) { overscroll-behavior-y: none; }   /* the pull is the feedback, not a stretch */
 /* Edge-to-edge Android: a strip behind the status bar so text doesn't scroll under the clock. */
 body.android::before {
   content: ""; position: fixed; z-index: 8; top: 0; left: 0; right: 0; height: var(--top-inset);
