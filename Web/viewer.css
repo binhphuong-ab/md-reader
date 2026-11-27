@@ -13,6 +13,7 @@
   --accent-soft: rgba(63, 138, 98, .14);
   --inline-code: #eab676;
   --outline-w: 270px;
+  --side: 36px;       /* left/right margin around the text */
   --top-inset: 0px;   /* height of the auto-hiding title bar, set from Swift */
   --sbw: 0px;         /* scrollbar width, set from JS: added on the left so the column is centred in the window */
   --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
@@ -32,11 +33,11 @@ body {
 ::selection { background: rgba(63, 138, 98, .42); }
 
 /* ---------- layout ---------- */
-#page { padding: calc(var(--top-inset) + 28px) 48px 120px calc(48px + var(--sbw)); }
+#page { padding: calc(var(--top-inset) + 28px) var(--side) 120px calc(var(--side) + var(--sbw)); }
 body.animate #page { transition: padding-left .18s ease; }
 body.animate #outline { transition: transform .18s ease; }
-/* 900px on normal windows, growing with wide ones (iMac / Studio Display), capped for comfortable line length. */
-.markdown-body { max-width: clamp(900px, 60vw, 1120px); margin: 0 auto; }
+/* Full width: the text uses the whole window, with only the small --side margins. */
+.markdown-body { margin: 0; }
 #outline {
   position: fixed; top: 0; bottom: 0; left: 0;
   width: var(--outline-w);
@@ -48,7 +49,7 @@ body.animate #outline { transition: transform .18s ease; }
   font-size: 13px; line-height: 1.45;
 }
 body.outline-open #outline { transform: none; }
-body.outline-open #page { padding-left: calc(var(--outline-w) + 48px + var(--sbw)); }
+body.outline-open #page { padding-left: calc(var(--outline-w) + var(--side) + var(--sbw)); }
 .outline-title {
   font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
   color: var(--muted); margin: 0 0 10px 8px;
