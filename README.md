@@ -6,11 +6,15 @@ A small, dark-themed macOS reader for Markdown files, with:
 - **Mermaid**: every diagram type; click a diagram to view it full-window, Esc to close
 - **GFM tables**, task lists, footnotes, syntax-highlighted code with a Copy button
 - **Outline sidebar** that tracks your position (⌃⌘S to show/hide)
-- **Distraction-free**: the title bar fades out after 3 s; move the mouse to the top edge to bring it back
+- **Distraction-free**: the title bar is hidden and shows only while the mouse is at the top edge
 - **Live reload**: the page updates when the file changes on disk and keeps your scroll position
 - Relative images and links work; links to other `.md` files open in MD Reader
 
 Everything is bundled, so it works offline.
+
+![MD Reader showing a document with math, the outline sidebar and dark-green accents](Examples/screenshot.png)
+
+![A Mermaid flowchart in the dark-green diagram theme](Examples/screenshot-diagram.png)
 
 ## Shortcuts
 
@@ -48,3 +52,8 @@ Finder → select any .md → Get Info → Open with: MD Reader → Change All�
   Mermaid + highlight.js. `Web/vendor/` holds pinned copies of those libraries;
   run `tools/vendor.sh` to upgrade them.
 - `Examples/feature-test.md`: one file that exercises every feature.
+
+## License
+
+MIT, see [LICENSE](LICENSE). The bundled libraries in `Web/vendor` keep their own licenses
+(all MIT, except highlight.js: BSD-3-Clause, and markdown-it-task-lists: ISC).

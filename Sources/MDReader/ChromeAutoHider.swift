@@ -1,17 +1,15 @@
 import AppKit
 
-/// Fades out the window's whole top bar (traffic lights, title, toolbar) so the page gets
-/// the full window. Moving the mouse into the top strip brings it back; it hides again once
-/// the mouse has been away from that strip for `hideDelay` seconds.
-/// (Same approach as Mindmap Markdown's ChromeAutoHider.)
+/// Keeps the window's whole top bar (traffic lights, title, toolbar) hidden so the page gets
+/// the full window. The bar shows only while the mouse is in the top strip and hides as soon
+/// as it leaves. (Grew out of Mindmap Markdown's ChromeAutoHider, minus the 3 s delay.)
 final class ChromeAutoHider {
     static let minRevealZone: CGFloat = 56
-    static let hideDelay: TimeInterval = 3
 
     private(set) var visible = true
     private weak var window: NSWindow?
     private var monitor: Any?
-    private var hideTimer: Timer?
+    private var leaveCheck: Timer?
 
     func attach(to window: NSWindow) {
         guard self.window !== window else { return }
@@ -25,8 +23,7 @@ final class ChromeAutoHider {
                 return event
             }
         }
-        setVisible(true, animated: false)
-        armHideTimer()   // start visible so the controls are discoverable
+        setVisible(false, animated: false)
     }
 
     /// Height of the bar in points: the page leaves this much room at the top.
@@ -40,30 +37,35 @@ final class ChromeAutoHider {
 
     deinit {
         if let monitor { NSEvent.removeMonitor(monitor) }
-        hideTimer?.invalidate()
+        leaveCheck?.invalidate()
     }
 
     private func handle(_ event: NSEvent) {
         guard let window, event.window === window else { return }
         if event.locationInWindow.y >= window.frame.height - revealZone {
             setVisible(true)
-            armHideTimer()                // restart the countdown on every move in the strip
+        } else {
+            hideIfAllowed()
         }
     }
 
-    private func armHideTimer() {
-        hideTimer?.invalidate()
-        // Default run-loop mode on purpose: it doesn't fire while a menu is open,
-        // so the bar never vanishes from under an open menu.
-        hideTimer = Timer.scheduledTimer(withTimeInterval: Self.hideDelay, repeats: false) { [weak self] _ in
-            self?.hideIfMouseAway()
+    /// Mouse-moved events stop once the pointer leaves the window (e.g. up to the menu bar),
+    /// so while the bar is up a light 0.1 s check notices that and hides it.
+    private func startLeaveCheck() {
+        guard leaveCheck == nil else { return }
+        let t = Timer(timeInterval: 0.1, repeats: true) { [weak self] _ in
+            guard let self, let window = self.window else { return }
+            if !self.mouseInZone(window) { self.hideIfAllowed() }
         }
+        RunLoop.main.add(t, forMode: .common)
+        leaveCheck = t
     }
 
-    private func hideIfMouseAway() {
-        guard let window else { return }
-        if window.styleMask.contains(.fullScreen) { return }   // macOS handles the bar in full screen
-        if window.attachedSheet != nil || mouseInZone(window) { armHideTimer(); return }
+    private func hideIfAllowed() {
+        guard visible, let window else { return }
+        if window.styleMask.contains(.fullScreen) { return }    // macOS handles the bar in full screen
+        if window.attachedSheet != nil { return }               // a dialog hangs from the bar
+        if NSEvent.pressedMouseButtons != 0 { return }          // mid-click or dragging the window
         setVisible(false)
     }
 
@@ -81,17 +83,20 @@ final class ChromeAutoHider {
 
     private func setVisible(_ show: Bool, animated: Bool = true) {
         guard let bar = titlebarContainer else { return }
+        guard show != visible || !animated else { return }
         visible = show
         if show {
+            startLeaveCheck()
             bar.isHidden = false
             NSAnimationContext.runAnimationGroup { ctx in
-                ctx.duration = animated ? 0.18 : 0
+                ctx.duration = animated ? 0.12 : 0
                 bar.animator().alphaValue = 1
             }
         } else {
+            leaveCheck?.invalidate()
+            leaveCheck = nil
             NSAnimationContext.runAnimationGroup({ ctx in
-                ctx.duration = animated ? 0.25 : 0
-                ctx.timingFunction = CAMediaTimingFunction(name: .easeIn)
+                ctx.duration = animated ? 0.12 : 0      // starts at once; just a quick fade, not a delay
                 bar.animator().alphaValue = 0
             }, completionHandler: { [weak self] in
                 // Once invisible, take it out of hit-testing so clicks reach the page.
